@@ -173,9 +173,9 @@
 
     function getSelectedSegment() {
       if (segments.length === 0) return null;
-      //const normalizedAngle = (((-currentAngle) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+      const normalizedAngle = (((-currentAngle) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
       // Offset by -90 degrees (π/2 radians) because pointer is now on the right
-      const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+      //const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
 
       const segmentAngle = (Math.PI*2) / segments.length;
       const index = Math.floor(normalizedAngle / segmentAngle);
