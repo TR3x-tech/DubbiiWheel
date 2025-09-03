@@ -161,11 +161,12 @@
       });
 
       // Draw pointer on the right side
+      // Draw pointer on the right side, pointing toward the wheel
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.moveTo(centerX + 180 - 20, centerY - 10); // top corner
-      ctx.lineTo(centerX + 180 - 20, centerY + 10); // bottom corner
-      ctx.lineTo(centerX + 180 + 20, centerY);     // tip pointing toward wheel
+      ctx.moveTo(centerX + 180 - 10, centerY);  // tip of the arrow, slightly inside the wheel radius
+      ctx.lineTo(centerX + 180 + 20, centerY - 10); // top corner of base
+      ctx.lineTo(centerX + 180 + 20, centerY + 10); // bottom corner of base
       ctx.closePath();
       ctx.fill();
     }
