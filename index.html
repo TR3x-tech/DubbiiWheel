@@ -9,23 +9,28 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
+      justify-content: flex-start;
+      min-height: 100vh;
       background: #f4f4f9;
       font-family: Arial, sans-serif;
+      padding: 20px;
     }
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
     canvas {
       border: 5px solid #333;
       border-radius: 50%;
       background: white;
     }
-    button {
+    .buttons {
       margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+    button {
       padding: 10px 20px;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
       border: none;
       border-radius: 10px;
@@ -33,24 +38,56 @@
       color: white;
       transition: background 0.3s;
     }
-    button:hover {
+    button:hover:not(:disabled) {
       background: #45a049;
+    }
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    .history {
+      margin-top: 30px;
+      text-align: center;
+    }
+    .history ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .history li {
+      background: #ddd;
+      margin: 5px 0;
+      padding: 5px 10px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
   <h1>Click to Spin!</h1>
   <canvas id="wheel" width="400" height="400"></canvas>
-  <button onclick="spin()">Spin Wheel</button>
+  
+  <div class="buttons">
+    <button id="spinBtn" onclick="spin()">Spin Wheel</button>
+    <button id="resetBtn" onclick="resetWheel()">Reset Wheel</button>
+  </div>
+
+  <div class="history">
+    <h2>Last 5 Results</h2>
+    <ul id="historyList"></ul>
+  </div>
 
   <script>
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
-    const segments = ["Prize 1", "Prize 2", "Prize 3", "Prize 4", "Prize 5", "Prize 6"];
+
+    // Original items
+    const originalSegments = ["Prize 1", "Prize 2", "Prize 3", "Prize 4", "Prize 5", "Prize 6"];
     const colors = ["#FF6F61", "#6B5B95", "#88B04B", "#F7CAC9", "#92A8D1", "#955251"];
+
+    let segments = [...originalSegments]; // copy of original
     let startAngle = 0;
     let spinAngle = 0;
     let spinning = false;
+    let history = [];
 
     function drawWheel() {
       const outsideRadius = 180;
@@ -71,8 +108,11 @@
         ctx.save();
 
         ctx.fillStyle = "white";
-        ctx.translate(200 + Math.cos(angle + arc / 2) * textRadius,
-                      200 + Math.sin(angle + arc / 2) * textRadius);
+        ctx.font = "16px Arial";
+        ctx.translate(
+          200 + Math.cos(angle + arc / 2) * textRadius,
+          200 + Math.sin(angle + arc / 2) * textRadius
+        );
         ctx.rotate(angle + arc / 2 + Math.PI / 2);
         ctx.fillText(segments[i], -ctx.measureText(segments[i]).width / 2, 0);
         ctx.restore();
@@ -98,16 +138,52 @@
         const degrees = startAngle * 180 / Math.PI + 90;
         const arc = 360 / segments.length;
         const index = Math.floor((360 - (degrees % 360)) / arc) % segments.length;
-        alert("You got: " + segments[index]);
+
+        const chosen = segments[index];
+        alert("You got: " + chosen);
+
+        // Track history
+        history.unshift(chosen); // add to beginning
+        if (history.length > 5) history.pop(); // keep max 5
+        updateHistory();
+
+        // Remove chosen item
+        segments.splice(index, 1);
+
+        // Disable spin if empty
+        if (segments.length === 0) {
+          alert("All prizes have been chosen!");
+          document.getElementById("spinBtn").disabled = true;
+        }
+
+        drawWheel();
       }
     }
 
     function spin() {
-      if (!spinning) {
+      if (!spinning && segments.length > 0) {
         spinAngle = Math.random() * 3000 + 2000; // random spin power
         spinning = true;
         rotateWheel();
       }
+    }
+
+    function updateHistory() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
+      history.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        historyList.appendChild(li);
+      });
+    }
+
+    function resetWheel() {
+      segments = [...originalSegments];
+      history = [];
+      document.getElementById("spinBtn").disabled = false;
+      updateHistory();
+      drawWheel();
     }
 
     drawWheel();
