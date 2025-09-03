@@ -59,11 +59,20 @@
       padding: 5px 10px;
       border-radius: 6px;
     }
+    .segments-left {
+      margin-top: 15px;
+      font-size: 18px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <h1>Click to Spin!</h1>
   <canvas id="wheel" width="400" height="400"></canvas>
+  
+  <div class="segments-left">
+    Segments remaining: <span id="segmentCount">6</span>
+  </div>
   
   <div class="buttons">
     <button id="spinBtn" onclick="spin()">Spin Wheel</button>
@@ -79,11 +88,17 @@
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
 
-    // Original items
-    const originalSegments = ["Prize 1", "Prize 2", "Prize 3", "Prize 4", "Prize 5", "Prize 6"];
-    const colors = ["#FF6F61", "#6B5B95", "#88B04B", "#F7CAC9", "#92A8D1", "#955251"];
+    // Original items with their corresponding colors
+    const originalData = [
+      { text: "Prize 1", color: "#FF6F61" },
+      { text: "Prize 2", color: "#6B5B95" },
+      { text: "Prize 3", color: "#88B04B" },
+      { text: "Prize 4", color: "#F7CAC9" },
+      { text: "Prize 5", color: "#92A8D1" },
+      { text: "Prize 6", color: "#955251" }
+    ];
 
-    let segments = [...originalSegments]; // copy of original
+    let segments = [...originalData]; // copy of original
     let startAngle = 0;
     let spinAngle = 0;
     let spinning = false;
@@ -93,18 +108,40 @@
       const outsideRadius = 180;
       const textRadius = 140;
       const insideRadius = 20;
-      const arc = Math.PI * 2 / segments.length;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      if (segments.length === 0) {
+        // Draw empty wheel
+        ctx.fillStyle = "#ddd";
+        ctx.beginPath();
+        ctx.arc(200, 200, outsideRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = "#666";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("All Done!", 200, 200);
+        ctx.textAlign = "start"; // reset
+        return;
+      }
+
+      const arc = Math.PI * 2 / segments.length;
+
       for (let i = 0; i < segments.length; i++) {
         const angle = startAngle + i * arc;
-        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = segments[i].color;
 
         ctx.beginPath();
         ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
         ctx.arc(200, 200, insideRadius, angle + arc, angle, true);
         ctx.fill();
+        
+        // Add stroke for better visibility
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
         ctx.save();
 
         ctx.fillStyle = "white";
@@ -114,7 +151,7 @@
           200 + Math.sin(angle + arc / 2) * textRadius
         );
         ctx.rotate(angle + arc / 2 + Math.PI / 2);
-        ctx.fillText(segments[i], -ctx.measureText(segments[i]).width / 2, 0);
+        ctx.fillText(segments[i].text, -ctx.measureText(segments[i].text).width / 2, 0);
         ctx.restore();
       }
 
@@ -128,32 +165,42 @@
     }
 
     function rotateWheel() {
-      if (spinAngle > 0) {
+      if (spinAngle > 0.1) { // Changed threshold for better stopping
         spinAngle *= 0.97; // slow down
         startAngle += (spinAngle * Math.PI) / 180;
         drawWheel();
         requestAnimationFrame(rotateWheel);
       } else {
         spinning = false;
+        spinAngle = 0; // Reset spin angle
+        
+        // Calculate which segment was selected
         const degrees = startAngle * 180 / Math.PI + 90;
         const arc = 360 / segments.length;
         const index = Math.floor((360 - (degrees % 360)) / arc) % segments.length;
 
         const chosen = segments[index];
-        alert("You got: " + chosen);
+        
+        // Show result with a delay for better UX
+        setTimeout(() => {
+          alert("You got: " + chosen.text);
+        }, 100);
 
         // Track history
-        history.unshift(chosen); // add to beginning
+        history.unshift(chosen.text); // add to beginning
         if (history.length > 5) history.pop(); // keep max 5
         updateHistory();
 
         // Remove chosen item
         segments.splice(index, 1);
+        updateSegmentCount();
 
-        // Disable spin if empty
+        // Check if wheel is empty
         if (segments.length === 0) {
-          alert("All prizes have been chosen!");
-          document.getElementById("spinBtn").disabled = true;
+          setTimeout(() => {
+            alert("All prizes have been chosen! 🎉");
+            document.getElementById("spinBtn").disabled = true;
+          }, 500);
         }
 
         drawWheel();
@@ -171,22 +218,32 @@
     function updateHistory() {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
-      history.forEach(item => {
+      history.forEach((item, index) => {
         const li = document.createElement("li");
-        li.textContent = item;
+        li.textContent = `${index + 1}. ${item}`;
         historyList.appendChild(li);
       });
     }
 
+    function updateSegmentCount() {
+      document.getElementById("segmentCount").textContent = segments.length;
+    }
+
     function resetWheel() {
-      segments = [...originalSegments];
+      segments = JSON.parse(JSON.stringify(originalData)); // deep copy
       history = [];
+      startAngle = 0;
+      spinAngle = 0;
+      spinning = false;
       document.getElementById("spinBtn").disabled = false;
       updateHistory();
+      updateSegmentCount();
       drawWheel();
     }
 
+    // Initialize
     drawWheel();
+    updateHistory();
   </script>
 </body>
 </html>
