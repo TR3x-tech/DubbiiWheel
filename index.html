@@ -156,41 +156,46 @@
       const segmentAngle = (Math.PI * 2) / segments.length;
 
       segments.forEach((seg, i) => {
-        const start = currentAngle + i * segmentAngle;
-        const end = start + segmentAngle;
-
-        ctx.fillStyle = seg.color;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, start, end);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        const textAngle = start + segmentAngle / 2;
-        const textX = centerX + Math.cos(textAngle) * textRadius;
-        const textY = centerY + Math.sin(textAngle) * textRadius;
-
-        ctx.save();
-        ctx.translate(textX, textY);
-        ctx.rotate(textAngle + Math.PI/2);
-        ctx.fillStyle = "white";
-        ctx.font = "16px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(seg.text, 0, 0);
-        ctx.restore();
-
-        const emojiRadius = 100; // closer to the center than the main text
-        ctx.save();
-        ctx.translate(centerX + Math.cos(textAngle) * emojiRadius, centerY + Math.sin(textAngle) * emojiRadius);
-        ctx.rotate(textAngle + Math.PI/2);
-        ctx.fillText(seg.emoji || "", 0, 0); // Draw emoji if defined
-        ctx.font = "24px Arial"; // bigger font for emoji
-        ctx.restore();
-
+          const start = currentAngle + i * segmentAngle;
+          const end = start + segmentAngle;
+      
+          // Draw segment
+          ctx.fillStyle = seg.color;
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.arc(centerX, centerY, radius, start, end);
+          ctx.closePath();
+          ctx.fill();
+      
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+      
+          const textAngle = start + segmentAngle / 2;
+      
+          // Draw main text
+          const textX = centerX + Math.cos(textAngle) * textRadius;
+          const textY = centerY + Math.sin(textAngle) * textRadius;
+      
+          ctx.save();
+          ctx.translate(textX, textY);
+          ctx.rotate(textAngle + Math.PI / 2);
+          ctx.fillStyle = "white";
+          ctx.font = "16px Arial"; // main text font size
+          ctx.textAlign = "center";
+          ctx.fillText(seg.text, 0, 0);
+          ctx.restore();
+      
+          // Draw emoji below the text
+          const emojiRadius = 100; // closer to center
+          ctx.save();
+          ctx.translate(centerX + Math.cos(textAngle) * emojiRadius, centerY + Math.sin(textAngle) * emojiRadius);
+          ctx.rotate(textAngle + Math.PI / 2);
+          ctx.fillStyle = "white";
+          ctx.font = "46px Arial"; // bigger font for emoji
+          ctx.textAlign = "center";
+          ctx.fillText(seg.emoji || "", 0, 0);
+          ctx.restore();
       });
 
       // Draw pointer on the right side
