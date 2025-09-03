@@ -160,12 +160,12 @@
         ctx.restore();
       });
 
-      // Draw pointer
+      // Draw pointer on the right side
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.moveTo(centerX - 10, 30);
-      ctx.lineTo(centerX + 10, 30);
-      ctx.lineTo(centerX, 60);
+      ctx.moveTo(centerX + 180 + 20, centerY); // tip of the arrow
+      ctx.lineTo(centerX + 180 - 20, centerY - 10); // top corner
+      ctx.lineTo(centerX + 180 - 20, centerY + 10); // bottom corner
       ctx.closePath();
       ctx.fill();
     }
