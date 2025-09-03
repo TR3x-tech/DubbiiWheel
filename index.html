@@ -21,10 +21,17 @@
       border-radius: 50%;
       background: white;
     }
-    .buttons {
+    .buttons, .modify {
       margin-top: 20px;
       display: flex;
-      gap: 15px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input[type="text"], input[type="color"] {
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
     button {
       padding: 10px 20px;
@@ -37,10 +44,7 @@
       transition: background 0.3s;
     }
     button:hover:not(:disabled) { background: #45a049; }
-    button:disabled {
-      background: gray;
-      cursor: not-allowed;
-    }
+    button:disabled { background: gray; cursor: not-allowed; }
     .history { margin-top: 30px; text-align: center; }
     .history ul { list-style-type: none; padding: 0; }
     .history li {
@@ -49,11 +53,7 @@
       padding: 5px 10px;
       border-radius: 6px;
     }
-    .segments-left {
-      margin-top: 15px;
-      font-size: 18px;
-      color: #333;
-    }
+    .segments-left { margin-top: 15px; font-size: 18px; color: #333; }
     .debug { margin-top: 10px; font-size: 12px; color: #666; }
   </style>
 </head>
@@ -70,6 +70,13 @@
     <button id="resetBtn" onclick="resetWheel()">Reset Wheel</button>
   </div>
 
+  <div class="modify">
+    <input type="text" id="newSegment" placeholder="New segment name" />
+    <input type="color" id="newColor" value="#FF0000" />
+    <button onclick="addSegment()">Add Segment</button>
+    <button onclick="removeLastSegment()">Remove Last Segment</button>
+  </div>
+
   <div class="history">
     <h2>Last 5 Results</h2>
     <ul id="historyList"></ul>
@@ -83,7 +90,6 @@
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
 
-    // Original wheel segments
     const originalSegments = [
       { text: "Prize 1", color: "#FF6F61" },
       { text: "Prize 2", color: "#6B5B95" },
@@ -93,17 +99,13 @@
       { text: "Prize 6", color: "#955251" }
     ];
 
-    // Load saved state or initialize
     let segments = localStorage.getItem("segments") ? JSON.parse(localStorage.getItem("segments")) : JSON.parse(JSON.stringify(originalSegments));
     let history = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
     let currentAngle = 0;
     let isSpinning = false;
     let animationId = null;
 
-    // Disable spin button if wheel is empty
-    if (segments.length === 0) {
-      document.getElementById("spinBtn").disabled = true;
-    }
+    if (segments.length === 0) document.getElementById("spinBtn").disabled = true;
 
     function updateDebugStatus(status) {
       document.getElementById("debugStatus").textContent = status;
@@ -120,7 +122,7 @@
       if (segments.length === 0) {
         ctx.fillStyle = "#ddd";
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, radius, 0, Math.PI*2);
         ctx.fill();
         ctx.fillStyle = "#666";
         ctx.font = "20px Arial";
@@ -129,7 +131,7 @@
         return;
       }
 
-      const segmentAngle = (Math.PI * 2) / segments.length;
+      const segmentAngle = (Math.PI*2) / segments.length;
 
       segments.forEach((seg, i) => {
         const start = currentAngle + i * segmentAngle;
@@ -146,7 +148,7 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        const textAngle = start + segmentAngle / 2;
+        const textAngle = start + segmentAngle/2;
         const textX = centerX + Math.cos(textAngle) * textRadius;
         const textY = centerY + Math.sin(textAngle) * textRadius;
 
@@ -160,34 +162,26 @@
         ctx.restore();
       });
 
-      // Draw pointer on the right side
-      // Draw pointer on the right side, pointing toward the wheel
+      // Draw pointer on the right pointing toward wheel
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.moveTo(centerX + 180 - 10, centerY);  // tip of the arrow, slightly inside the wheel radius
-      ctx.lineTo(centerX + 180 + 20, centerY - 10); // top corner of base
-      ctx.lineTo(centerX + 180 + 20, centerY + 10); // bottom corner of base
+      ctx.moveTo(centerX + radius + 10, centerY);  // tip toward wheel
+      ctx.lineTo(centerX + radius + 30, centerY - 10); // top of base
+      ctx.lineTo(centerX + radius + 30, centerY + 10); // bottom of base
       ctx.closePath();
       ctx.fill();
     }
 
     function getSelectedSegment() {
       if (segments.length === 0) return null;
-      const normalizedAngle = (((-currentAngle) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-      // Offset by -90 degrees (π/2 radians) because pointer is now on the right
-      //const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-
+      const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
       const segmentAngle = (Math.PI*2) / segments.length;
       const index = Math.floor(normalizedAngle / segmentAngle);
       return segments[index];
     }
 
     function spin() {
-      if (isSpinning || segments.length === 0) {
-        updateDebugStatus("Cannot spin right now");
-        return;
-      }
-
+      if (isSpinning || segments.length === 0) { updateDebugStatus("Cannot spin right now"); return; }
       updateDebugStatus("Spinning...");
       isSpinning = true;
 
@@ -212,17 +206,13 @@
           const selected = getSelectedSegment();
           if (selected) {
             updateDebugStatus("Spin complete!");
-
-            // Add to history
             history.unshift(selected.text);
             if (history.length > 5) history.pop();
             updateHistory();
 
-            // Remove from wheel
             const idx = segments.indexOf(selected);
             if (idx > -1) segments.splice(idx, 1);
 
-            // Save state
             localStorage.setItem("segments", JSON.stringify(segments));
             localStorage.setItem("history", JSON.stringify(history));
 
@@ -262,29 +252,34 @@
 
     function resetWheel() {
       if (animationId) cancelAnimationFrame(animationId);
-
       segments = JSON.parse(JSON.stringify(originalSegments));
       history = [];
       currentAngle = 0;
       isSpinning = false;
-
       document.getElementById("spinBtn").disabled = false;
-
-      // Clear saved state
       localStorage.removeItem("segments");
       localStorage.removeItem("history");
-
       updateHistory();
       updateSegmentCount();
       updateDebugStatus("Ready to spin");
       drawWheel();
     }
 
-    // Initialize
-    drawWheel();
-    updateHistory();
-    updateSegmentCount();
-    updateDebugStatus("Ready to spin");
-  </script>
-</body>
-</html>
+    // Add / Remove dynamically
+    function addSegment() {
+      const name = document.getElementById("newSegment").value.trim();
+      const color = document.getElementById("newColor").value;
+      if (!name) { alert("Please enter a name."); return; }
+      segments.push({ text: name, color: color });
+      updateSegmentCount();
+      drawWheel();
+      localStorage.setItem("segments", JSON.stringify(segments));
+      document.getElementById("newSegment").value = "";
+    }
+
+    function removeLastSegment() {
+      if (segments.length === 0) { alert("No segments to remove."); return; }
+      segments.pop();
+      updateSegmentCount();
+      drawWheel();
+      localStorage.setItem("segments", JSON.stringify
