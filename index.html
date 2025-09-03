@@ -188,6 +188,7 @@
         ctx.translate(centerX + Math.cos(textAngle) * emojiRadius, centerY + Math.sin(textAngle) * emojiRadius);
         ctx.rotate(textAngle + Math.PI/2);
         ctx.fillText(seg.emoji || "", 0, 0); // Draw emoji if defined
+        ctx.font = "24px Arial"; // bigger font for emoji
         ctx.restore();
 
       });
