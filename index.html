@@ -85,7 +85,7 @@
 
     // Original wheel segments
     const originalSegments = [
-      { text: "Arts/Crafts", color: "#FF6F61" },
+      { text: "Arts/Crafts", color: "#FF6F61" , emoji: "🎨"},
       { text: "Food/Beverage", color: "#6B5B95" },
       { text: "Lego/Puzzle", color: "#88B04B" },
       { text: "Collection", color: "#F7CAC9" },
@@ -182,6 +182,14 @@
         ctx.textAlign = "center";
         ctx.fillText(seg.text, 0, 0);
         ctx.restore();
+
+        const emojiRadius = 100; // closer to the center than the main text
+        ctx.save();
+        ctx.translate(centerX + Math.cos(textAngle) * emojiRadius, centerY + Math.sin(textAngle) * emojiRadius);
+        ctx.rotate(textAngle + Math.PI/2);
+        ctx.fillText(seg.emoji || "", 0, 0); // Draw emoji if defined
+        ctx.restore();
+
       });
 
       // Draw pointer on the right side
