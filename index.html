@@ -64,6 +64,11 @@
       font-size: 18px;
       color: #333;
     }
+    .debug {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -84,12 +89,16 @@
     <ul id="historyList"></ul>
   </div>
 
+  <div class="debug">
+    Status: <span id="debugStatus">Ready to spin</span>
+  </div>
+
   <script>
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
 
     // Original items with their corresponding colors
-    const originalData = [
+    const originalSegments = [
       { text: "Prize 1", color: "#FF6F61" },
       { text: "Prize 2", color: "#6B5B95" },
       { text: "Prize 3", color: "#88B04B" },
@@ -98,16 +107,21 @@
       { text: "Prize 6", color: "#955251" }
     ];
 
-    let segments = [...originalData]; // copy of original
-    let startAngle = 0;
-    let spinAngle = 0;
-    let spinning = false;
+    let segments = JSON.parse(JSON.stringify(originalSegments)); // Deep copy
+    let currentAngle = 0;
+    let isSpinning = false;
     let history = [];
+    let animationId = null;
+
+    function updateDebugStatus(status) {
+      document.getElementById("debugStatus").textContent = status;
+    }
 
     function drawWheel() {
-      const outsideRadius = 180;
-      const textRadius = 140;
-      const insideRadius = 20;
+      const centerX = 200;
+      const centerY = 200;
+      const radius = 180;
+      const textRadius = 130;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -115,104 +129,146 @@
         // Draw empty wheel
         ctx.fillStyle = "#ddd";
         ctx.beginPath();
-        ctx.arc(200, 200, outsideRadius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.fillStyle = "#666";
         ctx.font = "20px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("All Done!", 200, 200);
-        ctx.textAlign = "start"; // reset
+        ctx.fillText("All Done!", centerX, centerY);
+        ctx.textAlign = "start";
         return;
       }
 
-      const arc = Math.PI * 2 / segments.length;
+      const segmentAngle = (Math.PI * 2) / segments.length;
 
+      // Draw segments
       for (let i = 0; i < segments.length; i++) {
-        const angle = startAngle + i * arc;
-        ctx.fillStyle = segments[i].color;
+        const startAngle = currentAngle + (i * segmentAngle);
+        const endAngle = startAngle + segmentAngle;
 
+        // Draw segment
+        ctx.fillStyle = segments[i].color;
         ctx.beginPath();
-        ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
-        ctx.arc(200, 200, insideRadius, angle + arc, angle, true);
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
         ctx.fill();
-        
-        // Add stroke for better visibility
+
+        // Draw border
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 2;
         ctx.stroke();
-        
-        ctx.save();
 
+        // Draw text
+        const textAngle = startAngle + segmentAngle / 2;
+        const textX = centerX + Math.cos(textAngle) * textRadius;
+        const textY = centerY + Math.sin(textAngle) * textRadius;
+
+        ctx.save();
+        ctx.translate(textX, textY);
+        ctx.rotate(textAngle + Math.PI / 2);
         ctx.fillStyle = "white";
         ctx.font = "16px Arial";
-        ctx.translate(
-          200 + Math.cos(angle + arc / 2) * textRadius,
-          200 + Math.sin(angle + arc / 2) * textRadius
-        );
-        ctx.rotate(angle + arc / 2 + Math.PI / 2);
-        ctx.fillText(segments[i].text, -ctx.measureText(segments[i].text).width / 2, 0);
+        ctx.textAlign = "center";
+        ctx.fillText(segments[i].text, 0, 0);
         ctx.restore();
       }
 
       // Draw pointer
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.moveTo(200 - 10, 20);
-      ctx.lineTo(200 + 10, 20);
-      ctx.lineTo(200, 50);
+      ctx.moveTo(centerX - 10, 30);
+      ctx.lineTo(centerX + 10, 30);
+      ctx.lineTo(centerX, 60);
+      ctx.closePath();
       ctx.fill();
     }
 
-    function rotateWheel() {
-      if (spinAngle > 0.1) { // Changed threshold for better stopping
-        spinAngle *= 0.97; // slow down
-        startAngle += (spinAngle * Math.PI) / 180;
-        drawWheel();
-        requestAnimationFrame(rotateWheel);
-      } else {
-        spinning = false;
-        spinAngle = 0; // Reset spin angle
-        
-        // Calculate which segment was selected
-        const degrees = startAngle * 180 / Math.PI + 90;
-        const arc = 360 / segments.length;
-        const index = Math.floor((360 - (degrees % 360)) / arc) % segments.length;
-
-        const chosen = segments[index];
-        
-        // Show result with a delay for better UX
-        setTimeout(() => {
-          alert("You got: " + chosen.text);
-        }, 100);
-
-        // Track history
-        history.unshift(chosen.text); // add to beginning
-        if (history.length > 5) history.pop(); // keep max 5
-        updateHistory();
-
-        // Remove chosen item
-        segments.splice(index, 1);
-        updateSegmentCount();
-
-        // Check if wheel is empty
-        if (segments.length === 0) {
-          setTimeout(() => {
-            alert("All prizes have been chosen! 🎉");
-            document.getElementById("spinBtn").disabled = true;
-          }, 500);
-        }
-
-        drawWheel();
-      }
+    function getSelectedSegment() {
+      if (segments.length === 0) return null;
+      
+      // The pointer points down, so we need to find which segment is at the top
+      const normalizedAngle = (((-currentAngle) % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+      const segmentAngle = (Math.PI * 2) / segments.length;
+      const selectedIndex = Math.floor(normalizedAngle / segmentAngle);
+      
+      return segments[selectedIndex];
     }
 
     function spin() {
-      if (!spinning && segments.length > 0) {
-        spinAngle = Math.random() * 3000 + 2000; // random spin power
-        spinning = true;
-        rotateWheel();
+      if (isSpinning || segments.length === 0) {
+        updateDebugStatus("Cannot spin right now");
+        return;
       }
+
+      updateDebugStatus("Spinning...");
+      isSpinning = true;
+      
+      // Random spin amount (multiple full rotations plus some extra)
+      const minSpins = 5; // minimum full rotations
+      const maxSpins = 10; // maximum full rotations
+      const spins = minSpins + Math.random() * (maxSpins - minSpins);
+      const finalAngle = spins * Math.PI * 2;
+      
+      const startTime = Date.now();
+      const duration = 3000; // 3 seconds
+      const startAngle = currentAngle;
+      
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth deceleration
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        currentAngle = startAngle + finalAngle * easeOut;
+        drawWheel();
+        
+        if (progress < 1) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          // Spinning finished
+          isSpinning = false;
+          const selected = getSelectedSegment();
+          
+          if (selected) {
+            updateDebugStatus("Spin complete!");
+            
+            // Add to history
+            history.unshift(selected.text);
+            if (history.length > 5) {
+              history.pop();
+            }
+            updateHistory();
+            
+            // Remove selected segment
+            const selectedIndex = segments.indexOf(selected);
+            if (selectedIndex > -1) {
+              segments.splice(selectedIndex, 1);
+            }
+            
+            updateSegmentCount();
+            
+            // Show result
+            setTimeout(() => {
+              alert("You got: " + selected.text);
+              
+              if (segments.length === 0) {
+                alert("All prizes have been chosen! 🎉");
+                document.getElementById("spinBtn").disabled = true;
+                updateDebugStatus("All done!");
+              } else {
+                updateDebugStatus("Ready to spin again");
+              }
+              
+              drawWheel();
+            }, 100);
+          }
+        }
+      }
+      
+      animate();
     }
 
     function updateHistory() {
@@ -230,20 +286,26 @@
     }
 
     function resetWheel() {
-      segments = JSON.parse(JSON.stringify(originalData)); // deep copy
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      
+      segments = JSON.parse(JSON.stringify(originalSegments));
       history = [];
-      startAngle = 0;
-      spinAngle = 0;
-      spinning = false;
+      currentAngle = 0;
+      isSpinning = false;
+      
       document.getElementById("spinBtn").disabled = false;
       updateHistory();
       updateSegmentCount();
+      updateDebugStatus("Ready to spin");
       drawWheel();
     }
 
     // Initialize
     drawWheel();
     updateHistory();
+    updateDebugStatus("Ready to spin");
   </script>
 </body>
 </html>
