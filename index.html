@@ -1,295 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spin Wheel</title>
-<style>
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    background: #f4f4f9;
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  h1 { margin-bottom: 10px; }
-  canvas {
-    border: 5px solid #333;
-    border-radius: 50%;
-    background: white;
-  }
-  .buttons, .modify {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  input[type="text"], input[type="color"] {
-    padding: 5px;
-    font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    border-radius: 10px;
-    background: #4CAF50;
-    color: white;
-    transition: background 0.3s;
-  }
-  button:hover:not(:disabled) { background: #45a049; }
-  button:disabled { background: gray; cursor: not-allowed; }
-  .history { margin-top: 30px; text-align: center; }
-  .history ul { list-style-type: none; padding: 0; }
-  .history li {
-    background: #ddd;
-    margin: 5px 0;
-    padding: 5px 10px;
-    border-radius: 6px;
-  }
-  .segments-left { margin-top: 15px; font-size: 18px; color: #333; }
-  .debug { margin-top: 10px; font-size: 12px; color: #666; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin Wheel</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      background: #f4f4f9;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 10px; }
+    canvas {
+      border: 5px solid #333;
+      border-radius: 50%;
+      background: white;
+    }
+    .buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      background: #4CAF50;
+      color: white;
+      transition: background 0.3s;
+    }
+    button:hover:not(:disabled) { background: #45a049; }
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    .history { margin-top: 30px; text-align: center; }
+    .history ul { list-style-type: none; padding: 0; }
+    .history li {
+      background: #ddd;
+      margin: 5px 0;
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+    .segments-left {
+      margin-top: 15px;
+      font-size: 18px;
+      color: #333;
+    }
+    .debug { margin-top: 10px; font-size: 12px; color: #666; }
+  </style>
 </head>
 <body>
-<h1>Click to Spin!</h1>
-<canvas id="wheel" width="400" height="400"></canvas>
+  <h1>Click to Spin!</h1>
+  <canvas id="wheel" width="400" height="400"></canvas>
 
-<div class="segments-left">
-  Segments remaining: <span id="segmentCount">6</span>
-</div>
+  <div class="segments-left">
+    Segments remaining: <span id="segmentCount">6</span>
+  </div>
 
-<div class="buttons">
-  <button id="spinBtn" onclick="spin()">Spin Wheel</button>
-  <button id="resetBtn" onclick="resetWheel()">Reset Wheel</button>
-</div>
+  <div class="buttons">
+    <button id="spinBtn" onclick="spin()">Spin Wheel</button>
+    <button id="resetBtn" onclick="resetWheel()">Reset Wheel</button>
+  </div>
 
-<div class="modify">
-  <input type="text" id="newSegment" placeholder="New segment name" />
-  <input type="color" id="newColor" value="#FF0000" />
-  <button onclick="addSegment()">Add Segment</button>
-  <button onclick="removeLastSegment()">Remove Last Segment</button>
-</div>
+  <div class="history">
+    <h2>Last 5 Results</h2>
+    <ul id="historyList"></ul>
+  </div>
 
-<div class="history">
-  <h2>Last 5 Results</h2>
-  <ul id="historyList"></ul>
-</div>
+  <div class="debug">
+    Status: <span id="debugStatus">Ready to spin</span>
+  </div>
 
-<div class="debug">
-  Status: <span id="debugStatus">Ready to spin</span>
-</div>
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
 
-<script>
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+    // Original wheel segments
+    const originalSegments = [
+      { text: "Prize 1", color: "#FF6F61" },
+      { text: "Prize 2", color: "#6B5B95" },
+      { text: "Prize 3", color: "#88B04B" },
+      { text: "Prize 4", color: "#F7CAC9" },
+      { text: "Prize 5", color: "#92A8D1" },
+      { text: "Prize 6", color: "#955251" }
+    ];
 
-const originalSegments = [
-  { text: "Prize 1", color: "#FF6F61" },
-  { text: "Prize 2", color: "#6B5B95" },
-  { text: "Prize 3", color: "#88B04B" },
-  { text: "Prize 4", color: "#F7CAC9" },
-  { text: "Prize 5", color: "#92A8D1" },
-  { text: "Prize 6", color: "#955251" }
-];
+    // Load saved state or initialize
+    let segments = localStorage.getItem("segments") ? JSON.parse(localStorage.getItem("segments")) : JSON.parse(JSON.stringify(originalSegments));
+    let history = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
+    let currentAngle = 0;
+    let isSpinning = false;
+    let animationId = null;
 
-let segments = localStorage.getItem("segments") ? JSON.parse(localStorage.getItem("segments")) : JSON.parse(JSON.stringify(originalSegments));
-let history = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
-let currentAngle = 0;
-let isSpinning = false;
-let animationId = null;
-
-if (segments.length === 0) document.getElementById("spinBtn").disabled = true;
-
-function updateDebugStatus(status) {
-  document.getElementById("debugStatus").textContent = status;
-}
-
-function drawWheel() {
-  const centerX = 200;
-  const centerY = 200;
-  const radius = 180;
-  const textRadius = 130;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (segments.length === 0) {
-    ctx.fillStyle = "#ddd";
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = "#666";
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("All Done!", centerX, centerY);
-    return;
-  }
-
-  const segmentAngle = (Math.PI*2) / segments.length;
-
-  segments.forEach((seg, i) => {
-    const start = currentAngle + i * segmentAngle;
-    const end = start + segmentAngle;
-
-    ctx.fillStyle = seg.color;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius, start, end);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    const textAngle = start + segmentAngle/2;
-    const textX = centerX + Math.cos(textAngle) * textRadius;
-    const textY = centerY + Math.sin(textAngle) * textRadius;
-
-    ctx.save();
-    ctx.translate(textX, textY);
-    ctx.rotate(textAngle + Math.PI/2);
-    ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(seg.text, 0, 0);
-    ctx.restore();
-  });
-
-  // Pointer on right pointing inward
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.moveTo(centerX + radius + 10, centerY);
-  ctx.lineTo(centerX + radius + 30, centerY - 10);
-  ctx.lineTo(centerX + radius + 30, centerY + 10);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function getSelectedSegment() {
-  if (segments.length === 0) return null;
-  const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-  const segmentAngle = (Math.PI*2) / segments.length;
-  const index = Math.floor(normalizedAngle / segmentAngle);
-  return segments[index];
-}
-
-function spin() {
-  if (isSpinning || segments.length === 0) { updateDebugStatus("Cannot spin right now"); return; }
-  updateDebugStatus("Spinning...");
-  isSpinning = true;
-
-  const spins = 5 + Math.random() * 5;
-  const finalAngle = spins * Math.PI * 2;
-  const startTime = Date.now();
-  const duration = 3000;
-  const startAngle = currentAngle;
-
-  function animate() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easeOut = 1 - Math.pow(1 - progress, 3);
-
-    currentAngle = startAngle + finalAngle * easeOut;
-    drawWheel();
-
-    if (progress < 1) {
-      animationId = requestAnimationFrame(animate);
-    } else {
-      isSpinning = false;
-      const selected = getSelectedSegment();
-      if (selected) {
-        updateDebugStatus("Spin complete!");
-        history.unshift(selected.text);
-        if (history.length > 5) history.pop();
-        updateHistory();
-
-        const idx = segments.indexOf(selected);
-        if (idx > -1) segments.splice(idx, 1);
-
-        localStorage.setItem("segments", JSON.stringify(segments));
-        localStorage.setItem("history", JSON.stringify(history));
-
-        updateSegmentCount();
-
-        setTimeout(() => {
-          alert("You got: " + selected.text);
-          if (segments.length === 0) {
-            alert("All prizes have been chosen! 🎉");
-            document.getElementById("spinBtn").disabled = true;
-            updateDebugStatus("All done!");
-          } else {
-            updateDebugStatus("Ready to spin again");
-          }
-          drawWheel();
-        }, 100);
-      }
+    // Disable spin button if wheel is empty
+    if (segments.length === 0) {
+      document.getElementById("spinBtn").disabled = true;
     }
-  }
 
-  animate();
-}
+    function updateDebugStatus(status) {
+      document.getElementById("debugStatus").textContent = status;
+    }
 
-function updateHistory() {
-  const historyList = document.getElementById("historyList");
-  historyList.innerHTML = "";
-  history.forEach((item, i) => {
-    const li = document.createElement("li");
-    li.textContent = `${i+1}. ${item}`;
-    historyList.appendChild(li);
-  });
-}
+    function drawWheel() {
+      const centerX = 200;
+      const centerY = 200;
+      const radius = 180;
+      const textRadius = 130;
 
-function updateSegmentCount() {
-  document.getElementById("segmentCount").textContent = segments.length;
-}
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function resetWheel() {
-  if (animationId) cancelAnimationFrame(animationId);
-  segments = JSON.parse(JSON.stringify(originalSegments));
-  history = [];
-  currentAngle = 0;
-  isSpinning = false;
-  document.getElementById("spinBtn").disabled = false;
-  localStorage.removeItem("segments");
-  localStorage.removeItem("history");
-  updateHistory();
-  updateSegmentCount();
-  updateDebugStatus("Ready to spin");
-  drawWheel();
-}
+      if (segments.length === 0) {
+        ctx.fillStyle = "#ddd";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#666";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("All Done!", centerX, centerY);
+        return;
+      }
 
-// Add / Remove segments
-function addSegment() {
-  const name = document.getElementById("newSegment").value.trim();
-  const color = document.getElementById("newColor").value;
-  if (!name) { alert("Please enter a name."); return; }
-  segments.push({ text: name, color: color });
-  updateSegmentCount();
-  drawWheel();
-  localStorage.setItem("segments", JSON.stringify(segments));
-  document.getElementById("newSegment").value = "";
-  document.getElementById("spinBtn").disabled = false; // re-enable spin if previously empty
-}
+      const segmentAngle = (Math.PI * 2) / segments.length;
 
-function removeLastSegment() {
-  if (segments.length === 0) { alert("No segments to remove."); return; }
-  segments.pop();
-  updateSegmentCount();
-  drawWheel();
-  localStorage.setItem("segments", JSON.stringify(segments));
-}
+      segments.forEach((seg, i) => {
+        const start = currentAngle + i * segmentAngle;
+        const end = start + segmentAngle;
 
-drawWheel();
-updateHistory();
-updateSegmentCount();
-updateDebugStatus("Ready to spin");
-</script>
+        ctx.fillStyle = seg.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, start, end);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const textAngle = start + segmentAngle / 2;
+        const textX = centerX + Math.cos(textAngle) * textRadius;
+        const textY = centerY + Math.sin(textAngle) * textRadius;
+
+        ctx.save();
+        ctx.translate(textX, textY);
+        ctx.rotate(textAngle + Math.PI/2);
+        ctx.fillStyle = "white";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(seg.text, 0, 0);
+        ctx.restore();
+      });
+
+      // Draw pointer on the right side
+      // Draw pointer on the right side, pointing toward the wheel
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.moveTo(centerX + 180 - 10, centerY);  // tip of the arrow, slightly inside the wheel radius
+      ctx.lineTo(centerX + 180 + 20, centerY - 10); // top corner of base
+      ctx.lineTo(centerX + 180 + 20, centerY + 10); // bottom corner of base
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function getSelectedSegment() {
+      if (segments.length === 0) return null;
+      const normalizedAngle = (((-currentAngle) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+      // Offset by -90 degrees (π/2 radians) because pointer is now on the right
+      //const normalizedAngle = (((-currentAngle + Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+
+      const segmentAngle = (Math.PI*2) / segments.length;
+      const index = Math.floor(normalizedAngle / segmentAngle);
+      return segments[index];
+    }
+
+    function spin() {
+      if (isSpinning || segments.length === 0) {
+        updateDebugStatus("Cannot spin right now");
+        return;
+      }
+
+      updateDebugStatus("Spinning...");
+      isSpinning = true;
+
+      const spins = 5 + Math.random() * 5;
+      const finalAngle = spins * Math.PI * 2;
+      const startTime = Date.now();
+      const duration = 3000;
+      const startAngle = currentAngle;
+
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+
+        currentAngle = startAngle + finalAngle * easeOut;
+        drawWheel();
+
+        if (progress < 1) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          const selected = getSelectedSegment();
+          if (selected) {
+            updateDebugStatus("Spin complete!");
+
+            // Add to history
+            history.unshift(selected.text);
+            if (history.length > 5) history.pop();
+            updateHistory();
+
+            // Remove from wheel
+            const idx = segments.indexOf(selected);
+            if (idx > -1) segments.splice(idx, 1);
+
+            // Save state
+            localStorage.setItem("segments", JSON.stringify(segments));
+            localStorage.setItem("history", JSON.stringify(history));
+
+            updateSegmentCount();
+
+            setTimeout(() => {
+              alert("You got: " + selected.text);
+              if (segments.length === 0) {
+                alert("All prizes have been chosen! 🎉");
+                document.getElementById("spinBtn").disabled = true;
+                updateDebugStatus("All done!");
+              } else {
+                updateDebugStatus("Ready to spin again");
+              }
+              drawWheel();
+            }, 100);
+          }
+        }
+      }
+
+      animate();
+    }
+
+    function updateHistory() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
+      history.forEach((item, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i+1}. ${item}`;
+        historyList.appendChild(li);
+      });
+    }
+
+    function updateSegmentCount() {
+      document.getElementById("segmentCount").textContent = segments.length;
+    }
+
+    function resetWheel() {
+      if (animationId) cancelAnimationFrame(animationId);
+
+      segments = JSON.parse(JSON.stringify(originalSegments));
+      history = [];
+      currentAngle = 0;
+      isSpinning = false;
+
+      document.getElementById("spinBtn").disabled = false;
+
+      // Clear saved state
+      localStorage.removeItem("segments");
+      localStorage.removeItem("history");
+
+      updateHistory();
+      updateSegmentCount();
+      updateDebugStatus("Ready to spin");
+      drawWheel();
+    }
+
+    // Initialize
+    drawWheel();
+    updateHistory();
+    updateSegmentCount();
+    updateDebugStatus("Ready to spin");
+  </script>
 </body>
 </html>
