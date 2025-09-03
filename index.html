@@ -113,6 +113,14 @@
     let history = [];
     let animationId = null;
 
+    // Load saved state from localStorage
+    if (localStorage.getItem("segments")) {
+      segments = JSON.parse(localStorage.getItem("segments"));
+    }
+    if (localStorage.getItem("history")) {
+      history = JSON.parse(localStorage.getItem("history"));
+    }
+
     function updateDebugStatus(status) {
       document.getElementById("debugStatus").textContent = status;
     }
@@ -247,6 +255,10 @@
             if (selectedIndex > -1) {
               segments.splice(selectedIndex, 1);
             }
+            // Save updated state to localStorage
+            localStorage.setItem("segments", JSON.stringify(segments));
+            localStorage.setItem("history", JSON.stringify(history));
+
             
             updateSegmentCount();
             
@@ -263,6 +275,10 @@
               }
               
               drawWheel();
+              // Clear saved state in localStorage
+              localStorage.removeItem("segments");
+              localStorage.removeItem("history");
+
             }, 100);
           }
         }
