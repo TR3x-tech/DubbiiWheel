@@ -15,9 +15,7 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
-    h1 {
-      margin-bottom: 10px;
-    }
+    h1 { margin-bottom: 10px; }
     canvas {
       border: 5px solid #333;
       border-radius: 50%;
@@ -38,21 +36,13 @@
       color: white;
       transition: background 0.3s;
     }
-    button:hover:not(:disabled) {
-      background: #45a049;
-    }
+    button:hover:not(:disabled) { background: #45a049; }
     button:disabled {
       background: gray;
       cursor: not-allowed;
     }
-    .history {
-      margin-top: 30px;
-      text-align: center;
-    }
-    .history ul {
-      list-style-type: none;
-      padding: 0;
-    }
+    .history { margin-top: 30px; text-align: center; }
+    .history ul { list-style-type: none; padding: 0; }
     .history li {
       background: #ddd;
       margin: 5px 0;
@@ -64,21 +54,17 @@
       font-size: 18px;
       color: #333;
     }
-    .debug {
-      margin-top: 10px;
-      font-size: 12px;
-      color: #666;
-    }
+    .debug { margin-top: 10px; font-size: 12px; color: #666; }
   </style>
 </head>
 <body>
   <h1>Click to Spin!</h1>
   <canvas id="wheel" width="400" height="400"></canvas>
-  
+
   <div class="segments-left">
     Segments remaining: <span id="segmentCount">6</span>
   </div>
-  
+
   <div class="buttons">
     <button id="spinBtn" onclick="spin()">Spin Wheel</button>
     <button id="resetBtn" onclick="resetWheel()">Reset Wheel</button>
@@ -97,7 +83,7 @@
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
 
-    // Original items with their corresponding colors
+    // Original items with colors
     const originalSegments = [
       { text: "Prize 1", color: "#FF6F61" },
       { text: "Prize 2", color: "#6B5B95" },
@@ -107,7 +93,8 @@
       { text: "Prize 6", color: "#955251" }
     ];
 
-    let segments = JSON.parse(JSON.stringify(originalSegments)); // Deep copy
+    // Initialize variables
+    let segments = JSON.parse(JSON.stringify(originalSegments));
     let currentAngle = 0;
     let isSpinning = false;
     let history = [];
@@ -134,54 +121,50 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (segments.length === 0) {
-        // Draw empty wheel
         ctx.fillStyle = "#ddd";
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.fill();
-        
         ctx.fillStyle = "#666";
         ctx.font = "20px Arial";
         ctx.textAlign = "center";
         ctx.fillText("All Done!", centerX, centerY);
-        ctx.textAlign = "start";
         return;
       }
 
       const segmentAngle = (Math.PI * 2) / segments.length;
 
-      // Draw segments
-      for (let i = 0; i < segments.length; i++) {
-        const startAngle = currentAngle + (i * segmentAngle);
-        const endAngle = startAngle + segmentAngle;
+      segments.forEach((seg, i) => {
+        const start = currentAngle + i * segmentAngle;
+        const end = start + segmentAngle;
 
         // Draw segment
-        ctx.fillStyle = segments[i].color;
+        ctx.fillStyle = seg.color;
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.arc(centerX, centerY, radius, start, end);
         ctx.closePath();
         ctx.fill();
 
-        // Draw border
+        // Border
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw text
-        const textAngle = startAngle + segmentAngle / 2;
+        // Text
+        const textAngle = start + segmentAngle / 2;
         const textX = centerX + Math.cos(textAngle) * textRadius;
         const textY = centerY + Math.sin(textAngle) * textRadius;
 
         ctx.save();
         ctx.translate(textX, textY);
-        ctx.rotate(textAngle + Math.PI / 2);
+        ctx.rotate(textAngle + Math.PI/2);
         ctx.fillStyle = "white";
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(segments[i].text, 0, 0);
+        ctx.fillText(seg.text, 0, 0);
         ctx.restore();
-      }
+      });
 
       // Draw pointer
       ctx.fillStyle = "black";
@@ -195,13 +178,10 @@
 
     function getSelectedSegment() {
       if (segments.length === 0) return null;
-      
-      // The pointer points down, so we need to find which segment is at the top
-      const normalizedAngle = (((-currentAngle) % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-      const segmentAngle = (Math.PI * 2) / segments.length;
-      const selectedIndex = Math.floor(normalizedAngle / segmentAngle);
-      
-      return segments[selectedIndex];
+      const normalizedAngle = (((-currentAngle) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+      const segmentAngle = (Math.PI*2) / segments.length;
+      const index = Math.floor(normalizedAngle / segmentAngle);
+      return segments[index];
     }
 
     function spin() {
@@ -212,60 +192,46 @@
 
       updateDebugStatus("Spinning...");
       isSpinning = true;
-      
-      // Random spin amount (multiple full rotations plus some extra)
-      const minSpins = 5; // minimum full rotations
-      const maxSpins = 10; // maximum full rotations
-      const spins = minSpins + Math.random() * (maxSpins - minSpins);
+
+      const spins = 5 + Math.random() * 5; // 5–10 rotations
       const finalAngle = spins * Math.PI * 2;
-      
       const startTime = Date.now();
-      const duration = 3000; // 3 seconds
+      const duration = 3000;
       const startAngle = currentAngle;
-      
+
       function animate() {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smooth deceleration
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        
+
         currentAngle = startAngle + finalAngle * easeOut;
         drawWheel();
-        
+
         if (progress < 1) {
           animationId = requestAnimationFrame(animate);
         } else {
-          // Spinning finished
           isSpinning = false;
           const selected = getSelectedSegment();
-          
           if (selected) {
             updateDebugStatus("Spin complete!");
-            
-            // Add to history
+
+            // Update history
             history.unshift(selected.text);
-            if (history.length > 5) {
-              history.pop();
-            }
+            if (history.length > 5) history.pop();
             updateHistory();
-            
+
             // Remove selected segment
-            const selectedIndex = segments.indexOf(selected);
-            if (selectedIndex > -1) {
-              segments.splice(selectedIndex, 1);
-            }
-            // Save updated state to localStorage
+            const idx = segments.indexOf(selected);
+            if (idx > -1) segments.splice(idx, 1);
+
+            // Save state
             localStorage.setItem("segments", JSON.stringify(segments));
             localStorage.setItem("history", JSON.stringify(history));
 
-            
             updateSegmentCount();
-            
-            // Show result
+
             setTimeout(() => {
               alert("You got: " + selected.text);
-              
               if (segments.length === 0) {
                 alert("All prizes have been chosen! 🎉");
                 document.getElementById("spinBtn").disabled = true;
@@ -273,26 +239,21 @@
               } else {
                 updateDebugStatus("Ready to spin again");
               }
-              
               drawWheel();
-              // Clear saved state in localStorage
-              localStorage.removeItem("segments");
-              localStorage.removeItem("history");
-
             }, 100);
           }
         }
       }
-      
+
       animate();
     }
 
     function updateHistory() {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
-      history.forEach((item, index) => {
+      history.forEach((item, i) => {
         const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${item}`;
+        li.textContent = `${i+1}. ${item}`;
         historyList.appendChild(li);
       });
     }
@@ -302,16 +263,19 @@
     }
 
     function resetWheel() {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-      
+      if (animationId) cancelAnimationFrame(animationId);
+
       segments = JSON.parse(JSON.stringify(originalSegments));
       history = [];
       currentAngle = 0;
       isSpinning = false;
-      
+
       document.getElementById("spinBtn").disabled = false;
+
+      // Clear saved state
+      localStorage.removeItem("segments");
+      localStorage.removeItem("history");
+
       updateHistory();
       updateSegmentCount();
       updateDebugStatus("Ready to spin");
@@ -321,6 +285,7 @@
     // Initialize
     drawWheel();
     updateHistory();
+    updateSegmentCount();
     updateDebugStatus("Ready to spin");
   </script>
 </body>
