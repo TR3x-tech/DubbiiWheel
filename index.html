@@ -163,9 +163,9 @@
       // Draw pointer on the right side
       ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.moveTo(centerX + 180 + 20, centerY); // tip of the arrow
-      ctx.lineTo(centerX + 180 - 20, centerY - 10); // top corner
+      ctx.moveTo(centerX + 180 - 20, centerY - 10); // top corner
       ctx.lineTo(centerX + 180 - 20, centerY + 10); // bottom corner
+      ctx.lineTo(centerX + 180 + 20, centerY);     // tip pointing toward wheel
       ctx.closePath();
       ctx.fill();
     }
