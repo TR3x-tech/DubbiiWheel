@@ -403,19 +403,30 @@ function updateLists() {
   segments.forEach((seg) => {
     const li = document.createElement("li");
     li.textContent = seg.text + " " + (seg.emoji || "");
-    li.dataset.text = seg.text;   // ✅ store original text
-    li.onclick = () => li.classList.toggle("selected");
+    li.dataset.text = seg.text;
+    li.onclick = () => {
+      // Deselect all siblings first
+      [...remainingList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
+      // Select clicked
+      li.classList.add("selected");
+    };
     remainingList.appendChild(li);
   });
 
   spunItems.forEach((seg) => {
     const li = document.createElement("li");
     li.textContent = seg.text + " " + (seg.emoji || "");
-    li.dataset.text = seg.text;   // ✅ store original text
-    li.onclick = () => li.classList.toggle("selected");
+    li.dataset.text = seg.text;
+    li.onclick = () => {
+      // Deselect all siblings first
+      [...spunList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
+      // Select clicked
+      li.classList.add("selected");
+    };
     spunList.appendChild(li);
   });
 }
+
 
 
 function moveSelected(direction) {
