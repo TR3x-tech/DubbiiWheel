@@ -405,9 +405,10 @@ function updateLists() {
     li.textContent = seg.text + " " + (seg.emoji || "");
     li.dataset.text = seg.text;
     li.onclick = () => {
-      // Deselect all siblings first
+      // Deselect all in Remaining
       [...remainingList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
-      // Select clicked
+      // Deselect all in Spun to enforce mutual exclusivity
+      [...spunList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
       li.classList.add("selected");
     };
     remainingList.appendChild(li);
@@ -418,14 +419,16 @@ function updateLists() {
     li.textContent = seg.text + " " + (seg.emoji || "");
     li.dataset.text = seg.text;
     li.onclick = () => {
-      // Deselect all siblings first
+      // Deselect all in Spun
       [...spunList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
-      // Select clicked
+      // Deselect all in Remaining to enforce mutual exclusivity
+      [...remainingList.querySelectorAll("li")].forEach(el => el.classList.remove("selected"));
       li.classList.add("selected");
     };
     spunList.appendChild(li);
   });
 }
+
 
 
 
