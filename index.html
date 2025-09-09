@@ -59,7 +59,7 @@
 </head>
 <body>
   <h1>Click to Spin for the Parade!!</h1>
-  <canvas id="wheel" width="400" height="400"></canvas>
+  <canvas id="wheel" width="500" height="500"></canvas>
 
   <div class="segments-left">
     Segments remaining: <span id="segmentCount">6</span>
@@ -75,6 +75,97 @@
     <ul id="historyList"></ul>
   </div>
 
+  <div class="lists-container">
+  <div class="list">
+    <h2>Remaining</h2>
+    <ul id="remainingList"></ul>
+  </div>
+  <div class="list">
+    <h2>Spun</h2>
+    <ul id="spunList"></ul>
+  </div>
+</div>
+
+<div class="list-controls">
+  <button onclick="moveSelected('toSpun')">→ Mark as Spun</button>
+  <button onclick="moveSelected('toRemaining')">← Add Back</button>
+  <button onclick="removePermanently()">❌ Remove Permanently</button>
+</div>
+
+<!-- New revert button at very bottom -->
+<div style="margin-top:20px;">
+  <button onclick="revertOriginal()" style="background:#d9534f;">↩ Revert Wheel to Original State</button>
+</div>
+
+ <div style="margin-top: 30px; padding: 15px; border: 2px solid #ccc; border-radius: 10px; background: #f9f9f9; width: 90%; max-width: 600px;">
+  <h3>Add New Item to Wheel</h3>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items:center;">
+    <input type="text" id="newText" placeholder="Item Text" style="flex:2; padding:5px;" />
+    <input type="text" id="newEmoji" placeholder="Emoji" style="flex:1; padding:5px;" />
+    <input type="color" id="newColor" value="#FF0000" style="flex:1; padding:5px;" />
+    <button id="addItemBtn" style="flex:1; background:#4CAF50; color:white;">Add Item</button>
+  </div>
+</div>
+
+
+
+<style>
+  canvas {
+    border: 10px solid #333; /* visible border */
+    border-radius: 50%;      /* circular border */
+    background: transparent; /* let wheel drawing show fully */
+  }
+  .lists-container {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  margin-top: 30px;
+}
+
+.list {
+  flex: 1;
+  margin: 0 20px;
+  background: #f9f9f9;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.list h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.list li {
+  padding: 5px;
+  margin: 4px 0;
+  background: #eee;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.list li.selected {
+  background: #4CAF50;
+  color: white;
+}
+.list-controls {
+  margin-top: 10px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+</style>
+
+
+  
   <div class="debug">
     Status: <span id="debugStatus">Ready to spin</span>
   </div>
@@ -99,9 +190,9 @@
       { text: "Decor", color: "#8A2BE2", emoji: "🛋️" },
       { text: "Mystery Item", color: "#FF4500", emoji: "🎲" },
       { text: "Instrument", color: "#1E90FF", emoji: "🎺" },
-      { text: "Floof", color: "#92A8D1", emoji: "🐾" },
+      { text: "Floof", color: "#955251", emoji: "🐾" },
       { text: "Stuffy", color: "#DAA520", emoji: "🧸" },
-      { text: "Collection", color: "#F7CAC9", emoji: "🧤" },
+      { text: "Collection", color: "#F7CAC9", emoji: "🎎" },
       { text: "Ta Das!", color: "#20B2AA", emoji: "🎉" },
       { text: "Collectable/Vintage", color: "#FF69B4", emoji: "🪙" },
       { text: "Plant", color: "#32CD32", emoji: "🪴" },
@@ -110,7 +201,7 @@
       { text: "Prized Possession", color: "#FF6347", emoji: "💎" },
       { text: "Floof", color: "#955251", emoji: "🐾" },
       { text: "Lego/Puzzle", color: "#88B04B", emoji: "🧩" },
-      { text: "Arts/Crafts", color: "#FF1493", emoji: "🎨" },
+      { text: "Arts/Crafts", color: "#FF6F61", emoji: "🎨" },
       { text: "Current Hyper Fixation", color: "#4682B4", emoji: "🌀" },
       { text: "Notebook/Agenda/Calendar", color: "#DA70D6", emoji: "📝" },
       { text: "View (outdoors/window)", color: "#00CED1", emoji: "🏞️" },
@@ -133,81 +224,82 @@
       document.getElementById("debugStatus").textContent = status;
     }
 
-    function drawWheel() {
-      const centerX = 200;
-      const centerY = 200;
-      const radius = 180;
-      const textRadius = 130;
+function drawWheel() {
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  const radius = 240;          // full wheel size
+  const textRadius = 120;      // text goes inside
+  const emojiRadius = 220;     // emoji goes outside, near edge
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (segments.length === 0) {
-        ctx.fillStyle = "#ddd";
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#666";
-        ctx.font = "20px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("All Done!", centerX, centerY);
-        return;
-      }
+  if (segments.length === 0) {
+    ctx.fillStyle = "#ddd";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#666";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("All Done!", centerX, centerY);
+    return;
+  }
 
-      const segmentAngle = (Math.PI * 2) / segments.length;
+  const segmentAngle = (Math.PI * 2) / segments.length;
 
-      segments.forEach((seg, i) => {
-          const start = currentAngle + i * segmentAngle;
-          const end = start + segmentAngle;
-      
-          // Draw segment
-          ctx.fillStyle = seg.color;
-          ctx.beginPath();
-          ctx.moveTo(centerX, centerY);
-          ctx.arc(centerX, centerY, radius, start, end);
-          ctx.closePath();
-          ctx.fill();
-      
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-      
-          const textAngle = start + segmentAngle / 2;
-      
-          // Draw main text
-          const textX = centerX + Math.cos(textAngle) * textRadius;
-          const textY = centerY + Math.sin(textAngle) * textRadius;
-      
-          ctx.save();
-          ctx.translate(textX, textY);
-          ctx.rotate(textAngle + Math.PI / 2);
-          ctx.fillStyle = "white";
-          ctx.font = "16px Arial"; // main text font size
-          ctx.textAlign = "center";
-          ctx.fillText(seg.text, 0, 0);
-          ctx.restore();
-      
-          // Draw emoji below the text
-          const emojiRadius = 100; // closer to center
-          ctx.save();
-          ctx.translate(centerX + Math.cos(textAngle) * emojiRadius, centerY + Math.sin(textAngle) * emojiRadius);
-          ctx.rotate(textAngle + Math.PI / 2);
-          ctx.fillStyle = "white";
-          ctx.font = "38px Arial"; // bigger font for emoji
-          ctx.textAlign = "center";
-          ctx.fillText(seg.emoji || "", 0, 0);
-          ctx.restore();
-      });
+  segments.forEach((seg, i) => {
+    const start = currentAngle + i * segmentAngle;
+    const end = start + segmentAngle;
 
-      // Draw pointer on the right side
-      // Draw pointer on the right side, pointing toward the wheel
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.moveTo(centerX + 180 - 10, centerY);  // tip of the arrow, slightly inside the wheel radius
-      ctx.lineTo(centerX + 180 + 20, centerY - 10); // top corner of base
-      ctx.lineTo(centerX + 180 + 20, centerY + 10); // bottom corner of base
-      ctx.closePath();
-      ctx.fill();
-    }
+    // Segment background
+    ctx.fillStyle = seg.color;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, start, end);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const textAngle = start + segmentAngle / 2;
+
+    // --- Draw text (inside) ---
+    const textX = centerX + Math.cos(textAngle) * textRadius;
+    const textY = centerY + Math.sin(textAngle) * textRadius;
+    ctx.save();
+    ctx.translate(textX, textY);
+    ctx.rotate(textAngle);
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(seg.text, 0, 0);
+    ctx.restore();
+
+    // --- Draw emoji (outside) ---
+    const emojiX = centerX + Math.cos(textAngle) * emojiRadius;
+    const emojiY = centerY + Math.sin(textAngle) * emojiRadius;
+    ctx.save();
+    ctx.translate(emojiX, emojiY);
+    ctx.rotate(textAngle);
+    ctx.fillStyle = "white";
+    ctx.font = "34px Arial"; // good size for edge
+    ctx.textAlign = "center";
+    ctx.fillText(seg.emoji || "", 0, 0);
+    ctx.restore();
+  });
+
+  // Pointer
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.moveTo(centerX + radius - 10, centerY);
+  ctx.lineTo(centerX + radius + 20, centerY - 10);
+  ctx.lineTo(centerX + radius + 20, centerY + 10);
+  ctx.closePath();
+  ctx.fill();
+}
+
 
     function getSelectedSegment() {
       if (segments.length === 0) return null;
@@ -256,18 +348,23 @@
             if (history.length > 5) history.pop();
             updateHistory();
 
-            // Remove from wheel
+            // Remove from wheel and add to spun list
             const idx = segments.indexOf(selected);
-            if (idx > -1) segments.splice(idx, 1);
-
+            if (idx > -1) {
+              segments.splice(idx, 1);
+              spunItems.push(selected);
+            }
+            
             // Save state
             localStorage.setItem("segments", JSON.stringify(segments));
             localStorage.setItem("history", JSON.stringify(history));
-
+            localStorage.setItem("spunItems", JSON.stringify(spunItems));
+            
             updateSegmentCount();
+            updateLists();
 
             setTimeout(() => {
-              alert("The parade for today is: " + selected.text);
+              alert("The parade for today is: " + selected.text + " " + (selected.emoji || ""));
               if (segments.length === 0) {
                 alert("All prizes have been chosen! 🎉");
                 document.getElementById("spinBtn").disabled = true;
@@ -294,35 +391,197 @@
       });
     }
 
+    let spunItems = []; // items already spun
+
+function updateLists() {
+  const remainingList = document.getElementById("remainingList");
+  const spunList = document.getElementById("spunList");
+
+  remainingList.innerHTML = "";
+  spunList.innerHTML = "";
+
+  segments.forEach((seg) => {
+    const li = document.createElement("li");
+    li.textContent = seg.text + " " + (seg.emoji || "");
+    li.dataset.text = seg.text;   // ✅ store original text
+    li.onclick = () => li.classList.toggle("selected");
+    remainingList.appendChild(li);
+  });
+
+  spunItems.forEach((seg) => {
+    const li = document.createElement("li");
+    li.textContent = seg.text + " " + (seg.emoji || "");
+    li.dataset.text = seg.text;   // ✅ store original text
+    li.onclick = () => li.classList.toggle("selected");
+    spunList.appendChild(li);
+  });
+}
+
+
+function moveSelected(direction) {
+  const remainingList = document.getElementById("remainingList");
+  const spunList = document.getElementById("spunList");
+
+  if (direction === "toSpun") {
+    [...remainingList.querySelectorAll(".selected")].forEach(li => {
+      const text = li.dataset.text;
+      const idx = segments.findIndex(s => s.text === text);
+      if (idx > -1) {
+        spunItems.push(segments[idx]);
+        segments.splice(idx, 1);
+      }
+    });
+  } else if (direction === "toRemaining") {
+    [...spunList.querySelectorAll(".selected")].forEach(li => {
+      const text = li.textContent.trim().split(" ")[0];
+      const idx = spunItems.findIndex(s => s.text === text);
+      if (idx > -1) {
+        segments.push(spunItems[idx]);
+        spunItems.splice(idx, 1);
+      }
+    });
+  }
+
+  updateLists();
+  updateSegmentCount();
+  drawWheel();
+
+  // save state
+  localStorage.setItem("segments", JSON.stringify(segments));
+  localStorage.setItem("spunItems", JSON.stringify(spunItems));
+}
+
+
     function updateSegmentCount() {
       document.getElementById("segmentCount").textContent = segments.length;
     }
 
-    function resetWheel() {
-      if (animationId) cancelAnimationFrame(animationId);
+function resetWheel() {
+  if (animationId) cancelAnimationFrame(animationId);
 
-      segments = JSON.parse(JSON.stringify(originalSegments));
-      history = [];
-      currentAngle = 0;
-      isSpinning = false;
+  // Move all spun items back to wheel
+  segments = segments.concat(spunItems);
+  spunItems = [];
 
-      document.getElementById("spinBtn").disabled = false;
+  currentAngle = 0;
+  isSpinning = false;
 
-      // Clear saved state
-      localStorage.removeItem("segments");
-      localStorage.removeItem("history");
+  document.getElementById("spinBtn").disabled = false;
 
-      updateHistory();
-      updateSegmentCount();
-      updateDebugStatus("Ready to spin");
-      drawWheel();
+  // Save state
+  localStorage.setItem("segments", JSON.stringify(segments));
+  localStorage.setItem("spunItems", JSON.stringify(spunItems));
+
+  updateLists();
+  updateSegmentCount();
+  updateDebugStatus("Ready to spin");
+  drawWheel();
+}
+
+
+    function removePermanently() {
+  // Confirm before deleting
+  if (!confirm("Are you sure you want to delete the selected item(s)? This can be undone by selecting the button 'Revert Wheel to Original State' or by re-adding the item to the wheel later.")) {
+    return;
+  }
+
+  const remainingList = document.getElementById("remainingList");
+  const spunList = document.getElementById("spunList");
+
+  // Remove from Remaining
+  [...remainingList.querySelectorAll(".selected")].forEach(li => {
+    const text = li.dataset.text;
+    const idx = segments.findIndex(s => s.text === text);
+    if (idx > -1) {
+      segments.splice(idx, 1);
     }
+  });
+
+  // Remove from Spun
+  [...spunList.querySelectorAll(".selected")].forEach(li => {
+    const text = li.dataset.text;
+    const idx = spunItems.findIndex(s => s.text === text);
+    if (idx > -1) {
+      spunItems.splice(idx, 1);
+    }
+  });
+
+  updateLists();
+  updateSegmentCount();
+  drawWheel();
+
+  // save state
+  localStorage.setItem("segments", JSON.stringify(segments));
+  localStorage.setItem("spunItems", JSON.stringify(spunItems));
+}
+
+function revertOriginal() {
+  if (!confirm("This will reset the wheel to its original state. Continue?")) return;
+
+  segments = JSON.parse(JSON.stringify(originalSegments));
+  spunItems = [];
+  history = [];
+  currentAngle = 0;
+
+  // Reset localStorage
+  localStorage.removeItem("segments");
+  localStorage.removeItem("spunItems");
+  localStorage.removeItem("history");
+
+  document.getElementById("spinBtn").disabled = false;
+
+  updateLists();
+  updateHistory();
+  updateSegmentCount();
+  drawWheel();
+  updateDebugStatus("Wheel reset to original state");
+}
+
+    function addNewItem() {
+  const text = document.getElementById("newText").value.trim();
+  const emoji = document.getElementById("newEmoji").value.trim();
+  const color = document.getElementById("newColor").value;
+
+  if (!text) {
+    alert("Please enter text for the new item.");
+    return;
+  }
+
+  const newSegment = { text, emoji, color };
+
+  // Add to wheel
+  segments.push(newSegment);
+
+  // Save to localStorage
+  localStorage.setItem("segments", JSON.stringify(segments));
+
+  // Update UI
+  updateLists();
+  updateSegmentCount();
+  drawWheel();
+
+  // Clear form
+  document.getElementById("newText").value = "";
+  document.getElementById("newEmoji").value = "";
+  document.getElementById("newColor").value = "#FF0000";
+
+  updateDebugStatus(`Added new item: ${text} ${emoji}`);
+}
+
 
     // Initialize
     drawWheel();
     updateHistory();
     updateSegmentCount();
     updateDebugStatus("Ready to spin");
+    spunItems = localStorage.getItem("spunItems") 
+      ? JSON.parse(localStorage.getItem("spunItems")) 
+      : [];
+    
+    updateLists();
+    
+    document.getElementById("addItemBtn").addEventListener("click", addNewItem);
+
   </script>
 </body>
 </html>
