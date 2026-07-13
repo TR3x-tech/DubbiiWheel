@@ -1,4 +1,4 @@
-Hi Dubbers! I know now everyone knows how to code so here is a step by step process of how to change this code to a task wheel (or whatever kind of wheel you want). Don't worry if you've never used GitHub before. You don't need to install anything or know any programming—just follow the steps below.
+Hi Dubbers! I know now everyone knows how to code so here is a step by step process of how to change this code to a task wheel (or whatever kind of wheel you want). Don't worry if you've never used GitHub before. You don't need to install anything or know any programming—just follow the steps below. I know it looks like a lot but I promise it won't take very long!
 
 How to copy the code
 1) Make your own github account - it is free
