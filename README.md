@@ -33,7 +33,7 @@ Turn on your website:
 1) Look at the menu tabs near the top of your repository and click Settings (it has a gear icon next to it).
 2) Look at the left sidebar menu, scroll down to the "Code and automation" section, and click Pages.
 3) Under the Build and deployment section, look for Branch
-4) Click the dropdown menu that currently says None and change it to main (or master).
+4) Select main as the branch
 5) Leave the next dropdown folder as / (root) and click Save
 6) Congratulations! Your website is live!
 
