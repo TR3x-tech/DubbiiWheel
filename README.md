@@ -1,3 +1,5 @@
+Hi Dubbers! I know now everyone knows how to code so here is a step by step process of how to change this code to a task wheel (or whatever kind of wheel you want). This looks like a lot, but I tried to make detailed notes, I promise it shouldn't take very long!
+
 How to copy the code
 1) Make your own github account - it is free
 2) Scroll to the top of this GitHub repository page.
