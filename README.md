@@ -9,7 +9,7 @@ How to copy the code
 
 How to create your own website storage (repository)
 1) Click the + icon in the top right corner, then select New repository.
-2) Give your repository a name (e.g. "task wheel website")
+2) Give your repository a name (e.g. "task wheel")
 3) Select Public (this is required to make the website visible to the world)
 4) Check the box that says Add a README file
 5) Scroll to the bottom and click the green Create repository button
