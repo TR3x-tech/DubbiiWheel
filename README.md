@@ -1,11 +1,11 @@
-Hi Dubbers! I know now everyone knows how to code so here is a step by step process of how to change this code to a task wheel (or whatever kind of wheel you want). This looks like a lot, but I tried to make detailed notes, I promise it shouldn't take very long!
+Hi Dubbers! I know now everyone knows how to code so here is a step by step process of how to change this code to a task wheel (or whatever kind of wheel you want). Don't worry if you've never used GitHub before. You don't need to install anything or know any programming—just follow the steps below.
 
 How to copy the code
 1) Make your own github account - it is free
 2) Scroll to the top of this GitHub repository page.
 3) Click on the file name index.html
-4) Click the Copy raw contents icon (it looks like two overlapping squares) in the top-right corner of the code window.
-5) The code is now copied to your clipboard
+4) Copy the file select everything and then (Press Ctrl + C on Windows or Cmd + C on Mac)
+6) The code is now copied to your clipboard
 
 How to create your own website storage (repository)
 1) Click the + icon in the top right corner, then select New repository.
@@ -37,4 +37,4 @@ Turn on your website:
 5) Leave the next dropdown folder as / (root) and click Save
 6) Congratulations! Your website is live!
 
-Refresh the page after 1 to 2 minutes. A box will appear at the top of that same Pages screen showing your unique, live web address (it will look like https://github.io).
+Refresh the page after 1 to 2 minutes. A box will appear at the top of that same Pages screen showing your unique, live web address (it will look like https://your-github-username.github.io/your-repository-name/).
